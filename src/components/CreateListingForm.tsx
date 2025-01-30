@@ -1,28 +1,48 @@
 import { useState } from "react";
-import { Role, ListingStatus, Link } from "@/types/types";
+import { Role, ListingStatus, Link, PersonListing, ProjectListing } from "@/types/types";
 import { RoleSelect } from "./RoleSelect";
 import { LinkInput } from "./LinkInput";
+import { Label } from "./ui/label";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 interface CreateListingFormProps {
-  onSubmit: (data: {
-    name: string;
-    roles: Role[];
-    bio: string;
-    links: Link[];
-    status: ListingStatus;
-  }) => void;
+  onSubmit: (data: Omit<PersonListing | ProjectListing, "id">) => void;
 }
 
 export function CreateListingForm({ onSubmit }: CreateListingFormProps) {
-  const [name, setName] = useState("");
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [bio, setBio] = useState("");
-  const [links, setLinks] = useState<Link[]>([]);
   const [status, setStatus] = useState<ListingStatus>("looking_for_project");
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [founderName, setFounderName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [stage, setStage] = useState<ProjectListing["stage"]>("idea");
+  const [compensation, setCompensation] = useState<ProjectListing["compensation"]>("equity");
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [links, setLinks] = useState<Link[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ name, roles, bio, links, status });
+    if (status === "looking_for_project") {
+      onSubmit({
+        name,
+        bio,
+        roles,
+        links,
+        status,
+      });
+    } else {
+      onSubmit({
+        projectName,
+        founderName,
+        projectDescription,
+        stage,
+        compensation,
+        roles,
+        links,
+        status,
+      });
+    }
   };
 
   const toggleRole = (role: Role) => {
@@ -35,19 +55,6 @@ export function CreateListingForm({ onSubmit }: CreateListingFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Your Name
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md"
-          required
-        />
-      </div>
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           I am...
@@ -76,24 +83,116 @@ export function CreateListingForm({ onSubmit }: CreateListingFormProps) {
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Your Roles
-        </label>
-        <RoleSelect selectedRoles={roles} onRoleToggle={toggleRole} />
-      </div>
+      {status === "looking_for_project" ? (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bio
+            </label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              rows={4}
+              required
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Project Name
+            </label>
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Founder Name
+            </label>
+            <input
+              type="text"
+              value={founderName}
+              onChange={(e) => setFounderName(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Project Description
+            </label>
+            <textarea
+              value={projectDescription}
+              onChange={(e) => setProjectDescription(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              rows={4}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Project Stage
+            </label>
+            <select
+              value={stage}
+              onChange={(e) => setStage(e.target.value as ProjectListing["stage"])}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            >
+              <option value="idea">Idea Stage</option>
+              <option value="prototype">Prototype</option>
+              <option value="beta">Beta</option>
+              <option value="launched">Launched</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Compensation
+            </label>
+            <select
+              value={compensation}
+              onChange={(e) => setCompensation(e.target.value as ProjectListing["compensation"])}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            >
+              <option value="equity">Equity Only</option>
+              <option value="paid">Paid Position</option>
+              <option value="both">Equity + Payment</option>
+              <option value="undecided">To Be Discussed</option>
+            </select>
+          </div>
+        </>
+      )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Bio
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Required Roles
         </label>
-        <textarea
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md"
-          rows={4}
-          required
-        />
+        <RoleSelect selectedRoles={roles} onRoleToggle={toggleRole} />
       </div>
 
       <div>

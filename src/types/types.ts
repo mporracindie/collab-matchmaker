@@ -17,11 +17,26 @@ export interface Link {
   type: string;
 }
 
-export interface Listing {
+export interface BaseListing {
   id: string;
-  name: string;
   roles: Role[];
-  bio: string;
   links: Link[];
   status: ListingStatus;
 }
+
+export interface PersonListing extends BaseListing {
+  status: "looking_for_project";
+  name: string;
+  bio: string;
+}
+
+export interface ProjectListing extends BaseListing {
+  status: "looking_for_team";
+  projectName: string;
+  founderName: string;
+  projectDescription: string;
+  stage: "idea" | "prototype" | "beta" | "launched";
+  compensation: "equity" | "paid" | "both" | "undecided";
+}
+
+export type Listing = PersonListing | ProjectListing;
