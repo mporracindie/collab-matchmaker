@@ -28,6 +28,72 @@ const MOCK_LISTINGS: Listing[] = [
     ],
     status: "looking_for_team",
   },
+  {
+    id: "3",
+    name: "Alex Johnson",
+    roles: ["Data", "Builder"],
+    bio: "AI/ML engineer specializing in NLP. Looking to join a startup working on innovative AI solutions.",
+    links: [
+      { type: "GitHub", url: "https://github.com" },
+      { type: "LinkedIn", url: "https://linkedin.com" },
+    ],
+    status: "looking_for_project",
+  },
+  {
+    id: "4",
+    name: "Sarah Chen",
+    roles: ["Capitalist", "Operator"],
+    bio: "Former VC associate with startup operations experience. Looking for ambitious founders to back and support.",
+    links: [
+      { type: "LinkedIn", url: "https://linkedin.com" },
+      { type: "AngelList", url: "https://angel.co" },
+    ],
+    status: "looking_for_team",
+  },
+  {
+    id: "5",
+    name: "Michael Brown",
+    roles: ["Hustler", "Salesperson"],
+    bio: "Serial entrepreneur with 3 successful exits. Looking for the next big opportunity.",
+    links: [
+      { type: "LinkedIn", url: "https://linkedin.com" },
+      { type: "Website", url: "https://michaelbrown.com" },
+    ],
+    status: "looking_for_project",
+  },
+  {
+    id: "6",
+    name: "Emily Rodriguez",
+    roles: ["Legal", "Operator"],
+    bio: "Startup lawyer turned founder. Building a legal tech platform and looking for technical co-founders.",
+    links: [
+      { type: "LinkedIn", url: "https://linkedin.com" },
+      { type: "Twitter", url: "https://twitter.com" },
+    ],
+    status: "looking_for_team",
+  },
+  {
+    id: "7",
+    name: "David Kim",
+    roles: ["Designer", "Visionary"],
+    bio: "Product designer with experience at FAANG companies. Passionate about creating delightful user experiences.",
+    links: [
+      { type: "Portfolio", url: "https://davidkim.design" },
+      { type: "Dribbble", url: "https://dribbble.com" },
+    ],
+    status: "looking_for_project",
+  },
+  {
+    id: "8",
+    name: "Lisa Wang",
+    roles: ["Marketer", "Hustler"],
+    bio: "Building a D2C wellness brand. Looking for technical and operations co-founders.",
+    links: [
+      { type: "LinkedIn", url: "https://linkedin.com" },
+      { type: "Instagram", url: "https://instagram.com" },
+    ],
+    status: "looking_for_team",
+  }
 ];
 
 export default function Index() {
