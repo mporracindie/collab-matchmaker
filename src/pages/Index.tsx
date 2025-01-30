@@ -1,12 +1,66 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Listing, ListingStatus, PersonListing, ProjectListing } from "@/types/types";
+import { Listing, ListingStatus, PersonListing, ProjectListing, Link, Role } from "@/types/types";
 import { ListingBoard } from "@/components/ListingBoard";
 import { CreateListingForm } from "@/components/CreateListingForm";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
+
+// Helper function to convert database listing to frontend listing
+function convertDbToFrontendListing(dbListing: any): Listing {
+  const base = {
+    id: dbListing.id,
+    roles: dbListing.roles as Role[],
+    links: dbListing.links as Link[],
+    status: dbListing.status as ListingStatus,
+  };
+
+  if (dbListing.status === "looking_for_project") {
+    return {
+      ...base,
+      name: dbListing.name || "",
+      bio: dbListing.bio || "",
+    } as PersonListing;
+  } else {
+    return {
+      ...base,
+      projectName: dbListing.project_name || "",
+      founderName: dbListing.founder_name || "",
+      projectDescription: dbListing.project_description || "",
+      stage: dbListing.stage || "idea",
+      compensation: dbListing.compensation || "undecided",
+    } as ProjectListing;
+  }
+}
+
+// Helper function to convert frontend listing to database format
+function convertFrontendToDbListing(listing: Omit<PersonListing | ProjectListing, "id">, userId: string) {
+  if (listing.status === "looking_for_project") {
+    return {
+      user_id: userId,
+      status: listing.status,
+      name: listing.name,
+      bio: listing.bio,
+      roles: listing.roles,
+      links: listing.links,
+    };
+  } else {
+    return {
+      user_id: userId,
+      status: listing.status,
+      project_name: listing.projectName,
+      founder_name: listing.founderName,
+      project_description: listing.projectDescription,
+      stage: listing.stage,
+      compensation: listing.compensation,
+      roles: listing.roles,
+      links: listing.links,
+    };
+  }
+}
 
 export default function Index() {
   const [activeBoard, setActiveBoard] = useState<ListingStatus>("looking_for_project");
@@ -44,7 +98,9 @@ export default function Index() {
       return;
     }
 
-    setListings(data as Listing[]);
+    // Convert database listings to frontend format
+    const frontendListings = (data || []).map(convertDbToFrontendListing);
+    setListings(frontendListings);
   };
 
   const handleCreateListing = async (data: Omit<PersonListing, "id"> | Omit<ProjectListing, "id">) => {
@@ -55,12 +111,8 @@ export default function Index() {
     }
 
     try {
-      const { error } = await supabase.from("listings").insert([
-        {
-          ...data,
-          user_id: session.user.id,
-        },
-      ]);
+      const dbListing = convertFrontendToDbListing(data, session.user.id);
+      const { error } = await supabase.from("listings").insert([dbListing]);
 
       if (error) throw error;
 
