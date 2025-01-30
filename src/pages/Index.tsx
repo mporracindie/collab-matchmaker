@@ -1,123 +1,83 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Listing, ListingStatus, PersonListing, ProjectListing } from "@/types/types";
 import { ListingBoard } from "@/components/ListingBoard";
 import { CreateListingForm } from "@/components/CreateListingForm";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
-
-const MOCK_LISTINGS: Listing[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    roles: ["Builder", "Designer"],
-    bio: "Full-stack developer with 5 years of experience. Looking to join an exciting startup.",
-    links: [
-      { type: "LinkedIn", url: "https://linkedin.com" },
-      { type: "Portfolio", url: "https://portfolio.com" },
-    ],
-    status: "looking_for_project",
-  },
-  {
-    id: "2",
-    projectName: "FinTech Revolution",
-    founderName: "Jane Smith",
-    roles: ["Builder", "Data"],
-    projectDescription: "Building the next generation of financial technology. Our platform uses AI to democratize access to investment opportunities.",
-    stage: "prototype",
-    compensation: "both",
-    links: [
-      { type: "LinkedIn", url: "https://linkedin.com" },
-      { type: "Website", url: "https://fintech-revolution.com" },
-    ],
-    status: "looking_for_team",
-  },
-  {
-    id: "3",
-    name: "Alex Johnson",
-    roles: ["Data", "Builder"],
-    bio: "AI/ML engineer specializing in NLP. Looking to join a startup working on innovative AI solutions.",
-    links: [
-      { type: "GitHub", url: "https://github.com" },
-      { type: "LinkedIn", url: "https://linkedin.com" },
-    ],
-    status: "looking_for_project",
-  },
-  {
-    id: "4",
-    projectName: "HealthTech Platform",
-    founderName: "Sarah Chen",
-    roles: ["Builder", "Designer", "Data"],
-    projectDescription: "Revolutionizing healthcare with AI-powered diagnostics. Looking for passionate team members to join our mission.",
-    stage: "beta",
-    compensation: "equity",
-    links: [
-      { type: "LinkedIn", url: "https://linkedin.com" },
-      { type: "AngelList", url: "https://angel.co" },
-    ],
-    status: "looking_for_team",
-  },
-  {
-    id: "5",
-    name: "Michael Brown",
-    roles: ["Hustler", "Salesperson"],
-    bio: "Serial entrepreneur with 3 successful exits. Looking for the next big opportunity.",
-    links: [
-      { type: "LinkedIn", url: "https://linkedin.com" },
-      { type: "Website", url: "https://michaelbrown.com" },
-    ],
-    status: "looking_for_project",
-  },
-  {
-    id: "6",
-    projectName: "LegalTech AI",
-    founderName: "Emily Rodriguez",
-    roles: ["Builder", "Data"],
-    projectDescription: "Automating legal workflows with AI. Our platform helps lawyers work more efficiently and serve more clients.",
-    stage: "idea",
-    compensation: "both",
-    links: [
-      { type: "LinkedIn", url: "https://linkedin.com" },
-      { type: "Twitter", url: "https://twitter.com" },
-    ],
-    status: "looking_for_team",
-  },
-  {
-    id: "7",
-    name: "David Kim",
-    roles: ["Designer", "Visionary"],
-    bio: "Product designer with experience at FAANG companies. Passionate about creating delightful user experiences.",
-    links: [
-      { type: "Portfolio", url: "https://davidkim.design" },
-      { type: "Dribbble", url: "https://dribbble.com" },
-    ],
-    status: "looking_for_project",
-  },
-  {
-    id: "8",
-    projectName: "Wellness Direct",
-    founderName: "Lisa Wang",
-    roles: ["Builder", "Designer", "Marketer"],
-    projectDescription: "D2C wellness brand focusing on personalized nutrition. Looking for technical and operations co-founders.",
-    stage: "prototype",
-    compensation: "equity",
-    links: [
-      { type: "LinkedIn", url: "https://linkedin.com" },
-      { type: "Instagram", url: "https://instagram.com" },
-    ],
-    status: "looking_for_team",
-  }
-];
+import { Plus, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Index() {
   const [activeBoard, setActiveBoard] = useState<ListingStatus>("looking_for_project");
-  const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [session, setSession] = useState<any>(null);
+  const navigate = useNavigate();
 
-  const handleCreateListing = (data: Omit<PersonListing, "id"> | Omit<ProjectListing, "id">) => {
-    const newListing: Listing = {
-      ...data,
-      id: Math.random().toString(36).substr(2, 9),
-    } as Listing; // This cast is safe because we know the data matches either PersonListing or ProjectListing
-    setListings((current) => [...current, newListing]);
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    // Fetch listings
+    fetchListings();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchListings = async () => {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Error fetching listings");
+      return;
+    }
+
+    setListings(data as Listing[]);
+  };
+
+  const handleCreateListing = async (data: Omit<PersonListing, "id"> | Omit<ProjectListing, "id">) => {
+    if (!session) {
+      toast.error("Please sign in to create a listing");
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("listings").insert([
+        {
+          ...data,
+          user_id: session.user.id,
+        },
+      ]);
+
+      if (error) throw error;
+
+      toast.success("Listing created successfully!");
+      fetchListings();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error(error.message);
+    } else {
+      navigate("/auth");
+    }
   };
 
   return (
@@ -128,17 +88,37 @@ export default function Index() {
             <h1 className="text-2xl font-bold text-gray-900">
               Entrepreneur Matchmaking
             </h1>
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Create Listing
+            <div className="flex gap-4 items-center">
+              {session ? (
+                <>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors">
+                        <Plus className="w-5 h-5 mr-2" />
+                        Create Listing
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto p-4 md:p-6">
+                      <CreateListingForm onSubmit={handleCreateListing} />
+                    </DialogContent>
+                  </Dialog>
+                  <button
+                    onClick={handleSignOut}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors"
+                >
+                  Sign In
                 </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[90vh] overflow-y-auto p-4 md:p-6">
-                <CreateListingForm onSubmit={handleCreateListing} />
-              </DialogContent>
-            </Dialog>
+              )}
+            </div>
           </div>
 
           <div className="mt-6 flex gap-4">
