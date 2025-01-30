@@ -37,27 +37,40 @@ function convertDbToFrontendListing(dbListing: any): Listing {
 }
 
 // Helper function to convert frontend listing to database format
-function convertFrontendToDbListing(listing: Omit<PersonListing | ProjectListing, "id">, userId: string) {
+function convertFrontendToDbListing(
+  listing: Omit<PersonListing | ProjectListing, "id">,
+  userId: string
+) {
+  const baseData = {
+    user_id: userId,
+    status: listing.status,
+    roles: listing.roles,
+    links: listing.links as unknown as Json,
+  };
+
   if (listing.status === "looking_for_project") {
+    const personListing = listing as Omit<PersonListing, "id">;
     return {
-      user_id: userId,
-      status: listing.status,
-      name: listing.name,
-      bio: listing.bio,
-      roles: listing.roles,
-      links: listing.links,
+      ...baseData,
+      name: personListing.name,
+      bio: personListing.bio,
+      project_name: null,
+      founder_name: null,
+      project_description: null,
+      stage: null,
+      compensation: null,
     };
   } else {
+    const projectListing = listing as Omit<ProjectListing, "id">;
     return {
-      user_id: userId,
-      status: listing.status,
-      project_name: listing.projectName,
-      founder_name: listing.founderName,
-      project_description: listing.projectDescription,
-      stage: listing.stage,
-      compensation: listing.compensation,
-      roles: listing.roles,
-      links: listing.links,
+      ...baseData,
+      name: null,
+      bio: null,
+      project_name: projectListing.projectName,
+      founder_name: projectListing.founderName,
+      project_description: projectListing.projectDescription,
+      stage: projectListing.stage,
+      compensation: projectListing.compensation,
     };
   }
 }
