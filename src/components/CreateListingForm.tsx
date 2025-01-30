@@ -6,7 +6,7 @@ import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 interface CreateListingFormProps {
-  onSubmit: (data: Omit<PersonListing | ProjectListing, "id">) => void;
+  onSubmit: (data: Omit<PersonListing, "id"> | Omit<ProjectListing, "id">) => void;
 }
 
 export function CreateListingForm({ onSubmit }: CreateListingFormProps) {
@@ -24,15 +24,16 @@ export function CreateListingForm({ onSubmit }: CreateListingFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (status === "looking_for_project") {
-      onSubmit({
+      const personListing: Omit<PersonListing, "id"> = {
         name,
         bio,
         roles,
         links,
         status,
-      });
+      };
+      onSubmit(personListing);
     } else {
-      onSubmit({
+      const projectListing: Omit<ProjectListing, "id"> = {
         projectName,
         founderName,
         projectDescription,
@@ -41,7 +42,8 @@ export function CreateListingForm({ onSubmit }: CreateListingFormProps) {
         roles,
         links,
         status,
-      });
+      };
+      onSubmit(projectListing);
     }
   };
 
