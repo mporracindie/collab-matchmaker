@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Listing, ListingStatus } from "@/types/types";
+import { Listing, ListingStatus, PersonListing, ProjectListing } from "@/types/types";
 import { ListingBoard } from "@/components/ListingBoard";
 import { CreateListingForm } from "@/components/CreateListingForm";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -112,11 +112,11 @@ export default function Index() {
   const [activeBoard, setActiveBoard] = useState<ListingStatus>("looking_for_project");
   const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
 
-  const handleCreateListing = (data: Omit<Listing, "id">) => {
+  const handleCreateListing = (data: Omit<PersonListing, "id"> | Omit<ProjectListing, "id">) => {
     const newListing: Listing = {
       ...data,
       id: Math.random().toString(36).substr(2, 9),
-    };
+    } as Listing; // This cast is safe because we know the data matches either PersonListing or ProjectListing
     setListings((current) => [...current, newListing]);
   };
 
